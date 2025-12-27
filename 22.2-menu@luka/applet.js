@@ -1186,7 +1186,7 @@ class CinnamonMenuApplet extends Applet.TextIconApplet {
         edit_item.connect("activate", () => Util.spawnCommandLine("cinnamon-menu-editor"));
         this._applet_context_menu.addMenuItem(edit_item);
 
-        this.settings = new Settings.AppletSettings(this, "menu@cinnamon.org", instance_id);
+        this.settings = new Settings.AppletSettings(this, "22.2-menu@luka", instance_id);
         this.settings.connect("settings-changed", () => {
             this._size_dirty = true;
         });
