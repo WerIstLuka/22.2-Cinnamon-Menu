@@ -1195,11 +1195,6 @@ class CinnamonMenuApplet extends Applet.TextIconApplet {
             this._size_dirty = true;
         })
 
-        this._resizer = new Applet.PopupResizeHandler(this.menu.actor,
-            () => this._orientation,
-            (w,h) => this._onBoxResized(w,h),
-            () => this.popup_width * global.ui_scale,
-            () => this.popup_height * global.ui_scale);
 
         this.settings.bind("show-favorites", "showFavorites", () => this.queueRefresh(RefreshFlags.FAV_DOC));
         this.settings.bind("show-places", "showPlaces", () => this.queueRefresh(RefreshFlags.PLACE));
@@ -1235,6 +1230,16 @@ class CinnamonMenuApplet extends Applet.TextIconApplet {
         this.settings.bind("enable-animation", "enableAnimation", null);
         this.settings.bind("popup-width", "popup_width");
         this.settings.bind("popup-height", "popup_height");
+        // this.settings.bind("in the settings.sjon", "code variable");
+        this.settings.bind("show-lock", "show_lock", () => this.queueRefresh(RefreshFlags.SYSTEM));
+        this.settings.bind("show-logout", "show_logout", () => this.queueRefresh(RefreshFlags.SYSTEM));
+        this.settings.bind("show-quit", "show_quit", () => this.queueRefresh(RefreshFlags.SYSTEM));
+        this.settings.bind("show-name", "showName", () => this.queueRefresh(REFRESH_ALL_MASK));
+        this.settings.bind("show-description", "showDescription", () => this.queueRefresh(REFRESH_ALL_MASK));
+        this.settings.bind("lock-size", "lockSize", () => this._updateResize()); //lock -> needs restart, unlock -> needs no restart
+        this.settings.bind("inf-size", "infSize", () => this._updateResize());
+
+        this._updateResize();
 
         this._updateKeybinding();
 
@@ -1299,6 +1304,28 @@ class CinnamonMenuApplet extends Applet.TextIconApplet {
 
         this.set_show_label_in_vertical_panels(false);
     }
+	_updateResize() {
+		global.log("lock the size");
+		if (!this.lockSize) {
+	        this._resizer = new Applet.PopupResizeHandler(this.menu.actor,
+	            () => this._orientation,
+	            (w,h) => this._onBoxResized(w,h),
+	            () => this.popup_width * global.ui_scale,
+	            () => this.popup_height * global.ui_scale);
+	    }
+	}
+
+	_lukaSize() {
+		let width = 965;
+		let height = 503;
+		this.popup_width = width;
+		this.popup_height = height;
+		this._setMenuSize(width, height);
+	}
+
+	_restartCinnamon() {
+		Main.restartCinnamon();
+	}
 
     _updateShowIcons(container, show) {
         container.get_children().forEach( c => {
@@ -1311,8 +1338,10 @@ class CinnamonMenuApplet extends Applet.TextIconApplet {
     }
 
     _onBoxResized(width, height) {
-        width = (width / global.ui_scale).clamp(POPUP_MIN_WIDTH, POPUP_MAX_WIDTH);
-        height = (height / global.ui_scale).clamp(POPUP_MIN_HEIGHT, POPUP_MAX_HEIGHT);
+    	if (!this.infSize) {
+	        width = (width / global.ui_scale).clamp(POPUP_MIN_WIDTH, POPUP_MAX_WIDTH);
+	        height = (height / global.ui_scale).clamp(POPUP_MIN_HEIGHT, POPUP_MAX_HEIGHT);
+        }
 
         //Only update settings when resizing is completed to avoid excessive disk writes.
         if (!this._resizer.resizingInProgress) {
@@ -2171,8 +2200,12 @@ class CinnamonMenuApplet extends Applet.TextIconApplet {
                 button.actor.set_style_class_name(`${button.styleClass}-selected`);
                 this._previousSelectedAppActor = button.actor;
             }
-            this.selectedAppTitle.set_text(button.name);
-            this.selectedAppDescription.set_text(button.description);
+            if (this.showName) {
+            	this.selectedAppTitle.set_text(button.name);
+            }
+            if (this.showDescription) {
+            	this.selectedAppDescription.set_text(button.description);
+            }
         }
 
 
@@ -2634,53 +2667,58 @@ class CinnamonMenuApplet extends Applet.TextIconApplet {
         let button;
 
         //Lock screen
-        button = new SystemButton(this, "system-lock-screen",
-                                  _("Lock Screen"),
-                                  _("Lock the screen"));
+        if (this.show_lock) {
+	        button = new SystemButton(this, "system-lock-screen",
+	                                  _("Lock Screen"),
+	                                  _("Lock the screen"));
 
-        button.activate = () => {
-            this.menu.close();
+	        button.activate = () => {
+	            this.menu.close();
 
-            let screensaver_settings = new Gio.Settings({ schema_id: "org.cinnamon.desktop.screensaver" });
-            let screensaver_dialog = Gio.file_new_for_path("/usr/bin/cinnamon-screensaver-command");
-            if (screensaver_dialog.query_exists(null)) {
-                if (screensaver_settings.get_boolean("ask-for-away-message")) {
-                    Util.spawnCommandLine("cinnamon-screensaver-lock-dialog");
-                }
-                else {
-                    Util.spawnCommandLine("cinnamon-screensaver-command --lock");
-                }
-            }
-            else {
-                this._screenSaverProxy.LockRemote("");
-            }
-        };
+	            let screensaver_settings = new Gio.Settings({ schema_id: "org.cinnamon.desktop.screensaver" });
+	            let screensaver_dialog = Gio.file_new_for_path("/usr/bin/cinnamon-screensaver-command");
+	            if (screensaver_dialog.query_exists(null)) {
+	                if (screensaver_settings.get_boolean("ask-for-away-message")) {
+	                    Util.spawnCommandLine("cinnamon-screensaver-lock-dialog");
+	                }
+	                else {
+	                    Util.spawnCommandLine("cinnamon-screensaver-command --lock");
+	                }
+	            }
+	            else {
+	                this._screenSaverProxy.LockRemote("");
+	            }
+	        };
 
-        this.systemButtonsBox.add(button.actor, { y_align: St.Align.END, y_fill: false });
-
+	        this.systemButtonsBox.add(button.actor, { y_align: St.Align.END, y_fill: false });
+	    }
         //Logout button
-        button = new SystemButton(this, "system-log-out",
-                                  _("Log Out"),
-                                  _("Leave the session"));
+        if (this.show_logout) {
+	        button = new SystemButton(this, "system-log-out",
+	                                  _("Log Out"),
+	                                  _("Leave the session"));
 
-        button.activate = () => {
-            this.menu.close();
-            this._session.LogoutRemote(0);
-        };
+	        button.activate = () => {
+	            this.menu.close();
+	            this._session.LogoutRemote(0);
+	        };
+	    };
 
         this.systemButtonsBox.add(button.actor, { y_align: St.Align.END, y_fill: false });
 
         //Shutdown button
-        button = new SystemButton(this, "system-shutdown",
-                                  _("Shut Down"),
-                                  _("Shut down the computer"));
+        if (this.show_quit) {
+	        button = new SystemButton(this, "system-shutdown",
+	                                  _("Shut Down"),
+	                                  _("Shut down the computer"));
 
-        button.activate = () => {
-            this.menu.close();
-            this._session.ShutdownRemote();
-        };
+	        button.activate = () => {
+	            this.menu.close();
+	            this._session.ShutdownRemote();
+	        };
 
-        this.systemButtonsBox.add(button.actor, { y_align: St.Align.END, y_fill: false });
+	        this.systemButtonsBox.add(button.actor, { y_align: St.Align.END, y_fill: false });
+	    }
     }
 
     _scrollToButton(button, scrollBox = this.applicationsScrollBox) {

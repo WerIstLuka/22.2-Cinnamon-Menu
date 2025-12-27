@@ -1,7 +1,7 @@
 {
     "layout" : {
         "type" : "layout",
-        "pages" : ["panel", "menu"],
+        "pages" : ["panel", "menu", "luka"],
         "panel" : {
             "type" : "page",
             "title" : "Panel",
@@ -11,6 +11,11 @@
             "type" : "page",
             "title" : "Menu",
             "sections" : ["menu-layout", "menu-behave"]
+        },
+        "luka" : {
+            "type" : "page",
+            "title" : "Luka",
+            "sections" : ["system-buttons", "menu-options"]
         },
         "panel-appear" : {
             "type" : "section",
@@ -33,6 +38,16 @@
             "type" : "section",
             "title" : "Behavior",
             "keys" : ["category-hover", "enable-autoscroll", "search-filesystem"]
+        },
+        "system-buttons" : {
+            "type" : "section",
+            "title" : "System Buttons",
+            "keys" : ["show-lock", "show-logout", "show-quit"]
+        },
+        "menu-options" : {
+        	"type" : "section",
+        	"title" : "Menu Options",
+        	"keys" : ["show-name", "show-description", "lock-size", "inf-size", "luka-size", "restart-cinnamon"]
         }
     },
  "overlay-key" : {
@@ -202,5 +217,51 @@
     "type" : "button",
     "description" : "Restore the menu to its original size",
     "callback" : "_reset_menu_size"
+ },
+    "show-lock" : {
+    "type" : "switch",
+    "default" : true,
+    "description" : "Show lock screen button"
+ },
+    "show-logout" : {
+    "type" : "switch",
+    "default" : true,
+    "description" : "Show logout button"
+ },
+    "show-quit" : {
+    "type" : "switch",
+    "default" : true,
+    "description" : "Show quit button"
+ },
+    "show-name" : {
+    "type" : "switch",
+    "default" : true,
+    "description" : "Show names"
+ },
+    "show-description" : {
+    "type" : "switch",
+    "default" : true,
+    "description" : "Show descriptions"
+ },
+    "lock-size" : {
+    "type" : "switch",
+    "default" : false,
+    "description" : "Lock the menu size",
+    "tooltip": "needs cinnamon restart\n\npress ctrl+alt+esc to restart cinnamon\n\nor press the button below"
+ },
+    "inf-size" : {
+    "type" : "switch",
+    "default" : false,
+    "description" : "infinitely resizable menu"
+ },
+    "luka-size" : {
+    "type" : "button",
+    "description" : "Set the menu to my preffered size",
+    "callback" : "_lukaSize"
+ },
+    "restart-cinnamon" : {
+    "type" : "button",
+    "description" : "Restart cinnamon",
+    "callback" : "_restartCinnamon"
  }
 }
