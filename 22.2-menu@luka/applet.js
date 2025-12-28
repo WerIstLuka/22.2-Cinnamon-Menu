@@ -25,6 +25,19 @@ const Pango = imports.gi.Pango;
 const SearchProviderManager = imports.ui.searchProviderManager;
 const SignalManager = imports.misc.signalManager;
 const Params = imports.misc.params;
+//translation stuff from fredcw
+const Gettext = imports.gettext;
+
+Gettext.bindtextdomain(__meta.uuid, GLib.get_home_dir() + '/.local/share/locale');
+
+function _(str) {
+    let cinnamonTranslation = Gettext.gettext(str);
+    if (cinnamonTranslation !== str) {
+        return cinnamonTranslation;
+    }
+    return Gettext.dgettext('22.2-menu@luka', str);
+}
+
 
 const INITIAL_BUTTON_LOAD = 30;
 
@@ -2783,8 +2796,14 @@ class CinnamonMenuApplet extends Applet.TextIconApplet {
         this.categoriesBox = new St.BoxLayout({ style_class: 'menu-categories-box',
                                                 vertical: true,
                                                 accessible_role: Atk.Role.LIST });
+
+                                                
+        // Add additional box with 0 padding as a workaround to bug github.com/linuxmint/cinnamon/issues/11760 (thanks to fredcw)
+        this.categoriesBugfixBox = new St.BoxLayout({ style: 'padding: 0px; margin: 0px; spacing: 0px;' });
+        this.categoriesBugfixBox.add_actor(this.categoriesBox);
+        
         this.categoriesScrollBox = new St.ScrollView({ style_class: 'vfade menu-applications-scrollbox' });
-        this.categoriesScrollBox.add_actor(this.categoriesBox);
+        this.categoriesScrollBox.add_actor(this.categoriesBugfixBox);
         this.categoriesScrollBox.set_policy(St.PolicyType.NEVER, St.PolicyType.AUTOMATIC);
         this.categoriesScrollBox.set_clip_to_allocation(true);
 
